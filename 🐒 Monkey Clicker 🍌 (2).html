@@ -1,0 +1,297 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>🐒 Monkey Clicker 🍌</title>
+<style>
+body{
+    font-family: Arial, sans-serif;
+    margin: 0;
+    height:100vh;
+    overflow:hidden;
+    background: linear-gradient(to top, #87ceeb 0%, #c1f0f7 50%, #fdf6d8 100%);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+.menu, .infoScreen {
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    background: linear-gradient(to top, #87ceeb 0%, #c1f0f7 50%, #fdf6d8 100%);
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    transition: opacity 0.5s ease; z-index:1000;
+}
+.menu.hidden, .infoScreen.hidden { opacity:0; pointer-events:none; }
+.menu h1 { font-size:32px; margin-bottom:50px; color:black; }
+.menu button, .infoScreen button {
+    font-size:28px; padding:15px 40px; border-radius:12px; border:none; cursor:pointer;
+    background:linear-gradient(135deg,#FFD700,#FFA500); color:white; font-weight:bold; margin:10px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    outline: none;
+}
+.menu button:hover, .infoScreen button:hover { transform:translateY(-3px); box-shadow:0 8px 20px rgba(0,0,0,0.4); background:linear-gradient(135deg,#FFD633,#FF8C00);}
+.menu button:focus,
+.infoScreen button:focus { outline: none; box-shadow: none; }
+
+.infoScreen #backButton { position:absolute; top:20px; left:20px; }
+.infoScreen p { max-width:80%; text-align:center; font-size:20px; color:black; }
+
+.game { display:none; width:100%; height:100%; position:relative; flex-direction:column; align-items:center; justify-content:flex-start; overflow:hidden; }
+.game .title { margin-top:30px; font-size:32px; font-weight:bold; }
+
+#bananaButton { width:200px; height:200px; font-size:90px; border:none; border-radius:50%; background:gold; margin:20px auto; cursor:pointer; outline:none;}
+#bananaButton:focus { outline:none; box-shadow:none; }
+
+button.upgradeButton { background:linear-gradient(135deg,#FFD700,#FFA500); border:none; border-radius:15px; padding:15px 30px; font-size:18px; color:white; font-weight:bold; margin:10px 0; box-shadow:0 5px 15px rgba(0,0,0,0.3); transition: transform 0.2s, box-shadow 0.2s, background 0.3s; outline:none; width:80%; }
+button.upgradeButton:hover { transform:translateY(-3px); box-shadow:0 8px 20px rgba(0,0,0,0.4); background:linear-gradient(135deg,#FFD633,#FF8C00); }
+button.upgradeButton:active { transform:scale(0.95); box-shadow:0 4px 10px rgba(0,0,0,0.3); }
+button.upgradeButton:focus { outline:none; box-shadow:none; }
+
+.grass { position:absolute; bottom:0; width:100%; height:120px; background:linear-gradient(to top,#2e8b57 0%,#3cb371 100%); z-index:1; }
+
+.emojiObject { position:absolute; font-size:60px; z-index:2; bottom:120px; }
+.monkeyEmoji { position:absolute; bottom:120px; font-size:50px; z-index:3; }
+
+.warningText {
+    position:fixed;
+    top:40%;
+    left:50%;
+    transform:translate(-50%,-50%) scale(0.8);
+    background:rgba(255,0,0,0.9);
+    color:white;
+    font-size:24px;
+    font-weight:bold;
+    padding:20px 40px;
+    border-radius:15px;
+    opacity:0;
+    pointer-events:none;
+    animation: fadeInOut 2s forwards;
+}
+@keyframes fadeInOut{
+    0%{opacity:0; transform:translate(-50%,-60%) scale(0.8);}
+    10%{opacity:1; transform:translate(-50%,-50%) scale(1.1);}
+    80%{opacity:1; transform:translate(-50%,-50%) scale(1);}
+    100%{opacity:0; transform:translate(-50%,-40%) scale(0.8);}
+}
+
+#shopPanel {
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:400px; max-width:90%;
+    background:linear-gradient(135deg,#FFA500,#FFD700);
+    padding:20px; border-radius:15px; display:none; flex-direction:column; align-items:center; z-index:1000;
+    box-shadow:0 5px 20px rgba(0,0,0,0.5);
+}
+#closeShop { background:red; color:white; padding:10px 20px; margin-top:10px; border-radius:10px; cursor:pointer; border:none; font-size:18px; }
+
+#treasureChest {
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    font-size:120px; cursor:pointer; display:none; z-index:9999;
+}
+#treasureText {
+    position:fixed; top:40%; left:50%; transform:translate(-50%,-50%);
+    font-size:36px; font-weight:bold; color:white; display:none; z-index:10000; text-align:center; cursor:pointer;
+    background-color:red; padding:20px 40px; border-radius:15px; box-shadow:0 4px 15px rgba(0,0,0,0.5);
+}
+#clickMeText {
+    position:fixed; top:35%; left:50%; transform:translate(-50%,-50%);
+    font-size:36px; font-weight:bold; color:red; display:none; z-index:10001; text-align:center;
+}
+#shopButton {
+    font-size:24px; padding:10px 30px; border-radius:12px; border:none;
+    background:linear-gradient(135deg,#FFD700,#FFA500); color:white; font-weight:bold; cursor:pointer; margin-bottom:10px;
+}
+#shopButton:hover { transform:translateY(-2px); box-shadow:0 5px 15px rgba(0,0,0,0.4); background:linear-gradient(135deg,#FFD633,#FF8C00);}
+</style>
+</head>
+<body>
+
+<div class="menu" id="menu">
+    <h1>🐒 Monkey Clicker 🍌</h1>
+    <button id="playButton">✅ Играть ✅</button>
+    <button id="infoButton">🎮 Об игре 🎮</button>
+    <button id="musicButton">🎵 Музыка OFF ❌</button>
+</div>
+
+<div class="infoScreen hidden" id="infoScreen">
+    <button id="backButton">🔙 Назад 🔙</button>
+    <p>Приветствую вас в моей первой игре! Так как это мой первый проект игра может быть довольно сырая и не доработанная. Я постараюсь выкладывать обновления в эту игру. А если ты подписчик канала @ddneterfrik2 или Miroslav4ik то спасибо тебе что зашел в эту игру. Вы мои подписчики можете написать мне в комментариях как можно доработать эту игру. Приятной игры!</p>
+</div>
+
+<div class="game" id="game">
+    <h1 class="title">Monkey Clicker 🍌</h1>
+    <h2>Бананы: <span id="coins">0</span></h2>
+    <button id="bananaButton">🍌</button>
+    <button id="shopButton">🛍 Магазин 🛍</button>
+
+    <div class="grass"></div>
+
+    <div class="emojiObject" style="left:20%;">🌴</div>
+    <div class="emojiObject" style="left:70%;">🌴</div>
+
+    <div class="monkeyEmoji" id="monkey1">🐒</div>
+    <!-- Вторая обезьяна удалена -->
+
+    <audio id="monkeySound" src="https://zvukitop.com/wp-content/uploads/2021/04/zvuk-krika-obezyany-5.mp3"></audio>
+    <audio id="backgroundMusic" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    </audio>
+</div>
+
+<div id="shopPanel">
+    <h2>Магазин улучшений</h2>
+    <button class="upgradeButton" id="upgradeClick">Улучшение клика (+1) Цена: <span id="price">10</span> 🍌</button>
+    <button class="upgradeButton" id="chestButton">🎁 Сундук бананов 🍌 Цена: <span id="chestPrice">100</span> 🍌</button>
+    <button id="closeShop">Закрыть</button>
+</div>
+
+<div id="treasureChest">🎁</div>
+<div id="clickMeText">ЖМИ !</div>
+<div id="treasureText"></div>
+
+<script>
+const menu = document.getElementById("menu");
+const playButton = document.getElementById("playButton");
+const infoButton = document.getElementById("infoButton");
+const infoScreen = document.getElementById("infoScreen");
+const backButton = document.getElementById("backButton");
+const game = document.getElementById("game");
+const bananaButton = document.getElementById("bananaButton");
+const coinsText = document.getElementById("coins");
+const priceText = document.getElementById("price");
+const monkeySound = document.getElementById("monkeySound");
+const bgMusic = document.getElementById("backgroundMusic");
+const musicButton = document.getElementById("musicButton");
+const shopButton = document.getElementById("shopButton");
+const shopPanel = document.getElementById("shopPanel");
+const closeShop = document.getElementById("closeShop");
+
+const upgradeClick = document.getElementById("upgradeClick");
+const chestButton = document.getElementById("chestButton");
+const treasureChest = document.getElementById("treasureChest");
+const treasureText = document.getElementById("treasureText");
+const clickMeText = document.getElementById("clickMeText");
+
+bgMusic.volume = 0.3;
+let coins = 0;
+let clickPower = 1;
+let price = 10;
+let chestPrice = 100;
+let lastClick = 0;
+let firstWarningShown = false;
+const minClickInterval = 40;
+let isMusicOn = false;
+
+playButton.addEventListener("click", ()=>{
+    menu.classList.add("hidden");
+    setTimeout(()=>{ menu.style.display="none"; game.style.display="flex"; },500);
+});
+
+infoButton.addEventListener("click", ()=>{
+    menu.classList.add("hidden");
+    infoScreen.style.display="flex";
+    infoScreen.classList.remove("hidden");
+    setTimeout(()=>{ menu.style.display="none"; },500);
+});
+
+backButton.addEventListener("click", ()=>{
+    infoScreen.classList.add("hidden");
+    setTimeout(()=>{
+        infoScreen.style.display="none";
+        menu.style.display="flex";
+        setTimeout(()=>{ menu.classList.remove("hidden"); },50);
+    },500);
+});
+
+bananaButton.addEventListener("click", ()=>{
+    const now = Date.now();
+    if(lastClick>0 && now-lastClick<minClickInterval){
+        let text = firstWarningShown ? "НЕ ИСПОЛЬЗУЙ АВТОКЛИКЕР !" : "ПРЕДУПРЕЖДЕНИЕ: НЕ ИСПОЛЬЗУЙ АВТОКЛИКЕР ЛИБО ТВОИ БАНАНЫ ОБНУЛЯТСЯ !";
+        showWarning(text);
+        coins = 0; coinsText.textContent = coins;
+        firstWarningShown = true;
+        lastClick = 0;
+        return;
+    }
+    lastClick = now;
+    coins += clickPower; coinsText.textContent = coins;
+    monkeySound.currentTime = 0;
+    monkeySound.play();
+});
+
+function showWarning(msg){
+    const warning=document.createElement("div");
+    warning.className="warningText"; warning.textContent=msg;
+    document.body.appendChild(warning);
+    warning.offsetHeight;
+    warning.style.animation="fadeInOut 2s forwards";
+    setTimeout(()=>{warning.remove()},2000);
+}
+
+// Предупреждение в магазине
+upgradeClick.addEventListener("click", ()=>{
+    if(coins >= price){
+        coins -= price;
+        clickPower++;
+        price = Math.floor(price*1.5);
+        coinsText.textContent = coins;
+        priceText.textContent = price;
+    } else {
+        showWarning("❌ НЕДОСТАТОЧНО БАНАНОВ! ❌");
+    }
+});
+
+chestButton.addEventListener("click", ()=>{
+    if(coins >= chestPrice){
+        treasureChest.style.display="block";
+        clickMeText.style.display="block";
+    } else {
+        showWarning("❌ НЕДОСТАТОЧНО БАНАНОВ! ❌");
+    }
+});
+
+shopButton.addEventListener("click", ()=>{
+    shopPanel.style.display="flex";
+});
+closeShop.addEventListener("click", ()=>{
+    shopPanel.style.display="none";
+});
+
+treasureChest.addEventListener("click", ()=>{
+    let reward = Math.floor(Math.random()*500)+1;
+    coins += reward;
+    coinsText.textContent = coins;
+    treasureText.textContent = `🎁 ПОЗДРАВЛЯЮ! ВЫ ВЫБИЛИ ${reward} БАНАНОВ 🍌 🎁`;
+    treasureText.style.display="block";
+    treasureChest.style.display="none";
+    clickMeText.style.display="none";
+});
+
+treasureText.addEventListener("click", ()=>{
+    coins -= chestPrice;
+    coinsText.textContent = coins;
+    chestPrice += 100;
+    document.getElementById("chestPrice").textContent = chestPrice;
+    treasureText.style.display="none";
+});
+
+// Движение только одной обезьяны
+function moveMonkey(monkey,speed){
+    let direction = 1;
+    setInterval(()=>{
+        let left = monkey.offsetLeft + direction*speed;
+        if(left<=0){ left=0; direction=1; }
+        if(left + monkey.offsetWidth >= window.innerWidth){ left = window.innerWidth - monkey.offsetWidth; direction=-1; }
+        monkey.style.left = left + "px";
+    },50);
+}
+
+window.addEventListener("load", ()=>{
+    moveMonkey(document.getElementById("monkey1"),0.8);
+});
+
+musicButton.addEventListener("click", ()=>{
+    if(!isMusicOn){ bgMusic.play(); musicButton.textContent="🎵 Музыка ON ✅"; isMusicOn=true; } 
+    else { bgMusic.pause(); musicButton.textContent="🎵 Музыка OFF ❌"; isMusicOn=false; }
+});
+</script>
+</body>
+</html>
